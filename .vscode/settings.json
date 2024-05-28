@@ -1,0 +1,13 @@
+{
+    "java.project.sourcePaths": [
+        "src",
+        "config"
+    ],
+    "java.project.outputPath": "bin",
+    "java.project.referencedLibraries": [
+        "lib/pac4j-cas-6.0.2.jar",
+        "lib/pac4j-core-6.0.3.jar",
+        "lib/j2e-pac4j-4.1.0.jar",
+        "lib/pac4j-http-6.0.3.jar"
+    ]
+}
