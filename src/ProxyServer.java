@@ -70,7 +70,6 @@ public class ProxyServer {
                         try {
                             sendResponse(exchange, "Internal Server Error", 500);
                         } catch (IOException e1) {
-                            // TODO Auto-generated catch block
                             e1.printStackTrace();
                         }
                     }
