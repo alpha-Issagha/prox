@@ -60,10 +60,10 @@ public class ProxyServer {
                                 String response = chatGPTClient.queryChatGPT(question);
                                 sendResponse(exchange, response, 200);
                             } else {
-                                sendResponse(exchange, "CAS Authentication Failed", 401);
+                                sendResponse(exchange, "CAS Authentication Failed 1", 401);
                             }
                         } else {
-                            sendResponse(exchange, "CAS Authentication Failed", 401);
+                            sendResponse(exchange, "CAS Authentication Failed 2", 401);
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -96,7 +96,7 @@ public class ProxyServer {
                         return location.substring(location.lastIndexOf("/") + 1);
                     }
                 } else {
-                    System.out.println("Failed to obtain TGT: " + response.body());
+                    System.out.println("Failed to obtain TGT test: " + response.body());
                 }
             } catch (Exception e) {
                 e.printStackTrace();
