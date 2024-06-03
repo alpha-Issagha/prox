@@ -51,25 +51,26 @@ public class ProxyServer {
                 threadPool.submit(() -> {
                     try {
                         String tgt = getTicketGrantingTicket(username, password);
-                        System.out.println("TGT: " + tgt);
                         if (tgt != null) {
                             String st = getServiceTicket(tgt, SERVICE_URL);
-                            System.out.println("ST: " + st);
                             if (st != null && validateServiceTicket(st, SERVICE_URL)) {
+                                String requestBody = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                                String question = extractQuestion(requestBody);
                                 ChatGPTClient chatGPTClient = new ChatGPTClient();
-                                String response = chatGPTClient.queryChatGPT();
+                                String response = chatGPTClient.queryChatGPT(question);
                                 sendResponse(exchange, response, 200);
                             } else {
-                                sendResponse(exchange, "CAS Authentication Failed 1", 401);
+                                sendResponse(exchange, "CAS Authentication Failed", 401);
                             }
                         } else {
-                            sendResponse(exchange, "CAS Authentication Failed 2", 401);
+                            sendResponse(exchange, "CAS Authentication Failed", 401);
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
                         try {
                             sendResponse(exchange, "Internal Server Error", 500);
                         } catch (IOException e1) {
+                            // TODO Auto-generated catch block
                             e1.printStackTrace();
                         }
                     }
@@ -84,13 +85,11 @@ public class ProxyServer {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(CAS_URL))
                     .header("Content-Type", "application/x-www-form-urlencoded")
-                    .POST(HttpRequest.BodyPublishers.ofString("username=" + username + "&password=" + password))
+                    .POST(HttpRequest.BodyPublishers.ofString("username=" + URLEncoder.encode(username, StandardCharsets.UTF_8) + "&password=" + URLEncoder.encode(password, StandardCharsets.UTF_8)))
                     .build();
 
             try {
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                System.out.println("TGT Response Code: " + response.statusCode());
-                System.out.println("TGT Response Body: " + response.body());
                 if (response.statusCode() == 201) {
                     String location = response.headers().firstValue("Location").orElse(null);
                     if (location != null) {
@@ -116,10 +115,6 @@ public class ProxyServer {
                         .build();
 
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                System.out.println("ST Request URL: " + CAS_URL + "/" + tgt);
-                System.out.println("ST Request Body: " + "service=" + encodedServiceUrl);
-                System.out.println("ST Response Code: " + response.statusCode());
-                System.out.println("ST Response Body: " + response.body());
                 if (response.statusCode() == 200) {
                     return response.body();
                 } else {
@@ -140,16 +135,8 @@ public class ProxyServer {
                         .uri(URI.create(validationUrl))
                         .GET()
                         .build();
-
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                System.out.println("Validation Request URL: " + validationUrl);
-                System.out.println("Validation Response Code: " + response.statusCode());
-                System.out.println("Validation Response Body: " + response.body());
-                if (response.statusCode() == 200) {
-                    return response.body().contains("authenticationSuccess");
-                } else {
-                    System.out.println("Failed to validate ST: " + response.body());
-                }
+                return response.statusCode() == 200 && response.body().contains("authenticationSuccess");
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -162,5 +149,34 @@ public class ProxyServer {
             os.write(response.getBytes(StandardCharsets.UTF_8));
             os.close();
         }
+
+        private String extractQuestion(String requestBody) {
+            String key = "\"message\"";
+            int startIndex = requestBody.indexOf(key);
+            if (startIndex == -1) {
+                return "Error: 'message' key not found";
+            }
+        
+            startIndex += key.length();
+            startIndex = requestBody.indexOf(":", startIndex);
+            if (startIndex == -1) {
+                return "Error: ':' not found after 'message' key";
+            }
+        
+            startIndex++;
+            startIndex = requestBody.indexOf("\"", startIndex);
+            if (startIndex == -1) {
+                return "Error: opening quote for 'message' value not found";
+            }
+        
+            startIndex++;
+            int endIndex = requestBody.indexOf("\"", startIndex);
+            if (endIndex == -1) {
+                return "Error: closing quote for 'message' value not found";
+            }
+        
+            return requestBody.substring(startIndex, endIndex);
+        }
+        
     }
 }
