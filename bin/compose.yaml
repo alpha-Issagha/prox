@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  java-app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - API_KEY_FILE=/app/API_Key.txt
+    volumes:
+      - ./API_Key.txt:/app/API_Key.txt
+      - ./src:/app/src  # Monter le répertoire source pour le développement
+    develop:
+      watch:
+        - path: .  # Répertoire à surveiller pour les modifications
+          action: rebuild
+        - path: ./app
+          target: /usr/src/app
+          action: sync

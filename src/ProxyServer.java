@@ -103,7 +103,7 @@ public class ProxyServer {
             }
             return null;
         }
-//ffff
+//
         private String getServiceTicket(String tgt, String serviceUrl) {
             HttpClient client = HttpClient.newHttpClient();
             try {
